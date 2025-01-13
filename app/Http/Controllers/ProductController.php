@@ -39,100 +39,148 @@ class ProductController extends Controller
 
     //     return response()->json($products);
     // }
-    public function index($slug)
+    // public function index($slug)
+    // {
+    //     // $categoryId = $request->input('category_id');
+    //     // $products = $categoryId
+    //     //     ? Product::where('category_id', $categoryId)->get()
+    //     //     : Product::all();
+    //     $category = Category::where('slug', $slug)->firstOrFail();
+
+    //     // Lấy sản phẩm thuộc danh mục
+    //     $products = Product::where('category_slug', $category->slug)->get();
+
+    //     // Thêm URL đầy đủ cho các ảnh khi trả về API
+    //     foreach ($products as $product) {
+    //         if ($product->images) {
+    //             // Nếu có ảnh, chuyển đổi mảng các đường dẫn ảnh thành URL đầy đủ
+    //             $product->images = array_map(function ($image) {
+    //                 return asset($image); // Tạo URL đầy đủ cho ảnh
+    //             }, $product->images);
+    //         }
+    //     }
+
+    //     return response()->json($products);
+    // }
+
+    public function index()
     {
+        // Lấy tất cả sản phẩm và nhóm chúng theo category_slug
+        $productsByCategory = Product::all()->groupBy('category_slug');
 
-        // $categoryId = $request->input('category_id');
-        // $products = $categoryId
-        //     ? Product::where('category_id', $categoryId)->get()
-        //     : Product::all();
-        $category = Category::where('slug', $slug)->firstOrFail();
-
-        // Lấy sản phẩm thuộc danh mục
-        $products = Product::where('category_slug', $category->slug)->get();
-
-        // Thêm URL đầy đủ cho các ảnh khi trả về API
-        foreach ($products as $product) {
-            if ($product->images) {
-                // Nếu có ảnh, chuyển đổi mảng các đường dẫn ảnh thành URL đầy đủ
-                $product->images = array_map(function ($image) {
-                    return asset($image); // Tạo URL đầy đủ cho ảnh
-                }, $product->images);
-            }
+        // Tạo mảng kết quả để trả về
+        $result = [];
+        foreach ($productsByCategory as $categorySlug => $products) {
+            $result[] = [
+                'category_name' => $products->first()->category->name,
+                'category_slug' => $categorySlug,
+                'products' => $products->map(function ($product) {
+                    // Đảm bảo đường dẫn đầy đủ cho ảnh
+                    if ($product->image) {
+                        $product->image = json_decode($product->image); // Giải mã JSON nếu lưu ảnh dưới dạng mảng
+                        $product->image = array_map(fn($img) => asset($img), $product->image); // Thêm URL đầy đủ
+                    }
+                    return $product;
+                }),
+            ];
         }
 
-        return response()->json($products);
+        return response()->json($result);
+    }
+
+    public function getProduct($slug)
+    {
+        $category = Category::where('slug', $slug)->first();
+
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
+        // Lấy danh sách sản phẩm thuộc danh mục
+        $products = Product::where('category_slug', $slug)
+            // ->take(10) // Lấy tối đa 10 sản phẩm
+            ->get()
+            ->map(function ($product) {
+                if ($product->image) {
+                    $product->image = json_decode($product->image);
+                    $product->image = array_map(fn($img) => asset($img), $product->image);
+                }
+                return $product;
+            });
+
+        return response()->json([
+            'category_name' => $category->name,
+            'products' => $products
+        ]);
     }
 
 
-    // Tạo sản phẩm mới
+
+
     // public function store(Request $request)
     // {
-    //     $validated = $request->validate([
+    //     $validated  = $request->validate([
     //         'name' => 'required|string|max:255',
     //         'price' => 'required|numeric',
-    //         'image' => 'nullable|max:2048',
-    //         'category_id' => 'nullable|exists:categories,id',
+    //         'images' => 'nullable|array', 
+    //         'images.*' => 'image|max:2048', // Mỗi ảnh phải là file hình ảnh
+    //         'category_id' => 'exists:categories,id',
     //     ]);
 
-    //     // Lưu ảnh nếu có
-    //     if ($request->hasFile('image')) {
-    //         $validated['image'] = $request->file('image')->store('products', 'public');
+    //     if ($request->category_id) {
+    //         $category = Category::where('id', $request->category_id)->firstOrFail();
+
+    //         $validated['category_slug'] = $category->slug;
     //     }
 
-    //     $product = Product::create($validated);
-    //     return response()->json($product, 201);
-    // }
-    // public function store(Request $request)
-    // {
+    //     $imagePaths = [];
 
-    //     // Validate dữ liệu đầu vào
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'price' => 'required|numeric',
-    //         'image' => 'nullable|max:2048',
-    //         'category_id' => 'nullable|exists:categories,id',
-    //     ]);
+    //     if ($request->hasFile('images')) {
+    //         foreach ($request->file('images') as $file) {
 
-    //     if ($request->hasFile('image')) {
-    //         $file = $request->file('image');
-    //         $filename = time() . '_' . $file->getClientOriginalName();
-    //         $file->move(public_path('uploads/products'), $filename);
-    //         // Lưu đường dẫn file vào database
-    //         $validated['image'] = 'uploads/products/' . $filename;
+    //             $filename = time() . '_' . $file->getClientOriginalName();
+    //             // Lưu file vào thư mục public/uploads/products
+    //             $file->move(public_path('uploads/products'), $filename);
+    //             // Lưu đường dẫn file vào mảng
+    //             $imagePaths[] = asset('uploads/products/' . $filename);
+    //         }
     //     }
 
+    //     // Thêm mảng ảnh vào dữ liệu và lưu dưới dạng JSON
+    //     $validated['image'] = json_encode($imagePaths);
+    //     dump($validated);
+    //     // Tạo sản phẩm mới
     //     $product = Product::create($validated);
 
-    //     return response()->json(
-    //         [
-    //             $product,
-    //             201,
-
-    //             'has_image' => $request->hasFile('image') ? 'Có file ảnh' : 'Không có file ảnh'
-    //         ]
-    //     );
+    //     return response()->json([
+    //         'product' => $product,
+    //         'message' => 'Sản phẩm được tạo thành công',
+    //         'images' => $imagePaths, // Trả về danh sách ảnh đã upload
+    //     ], 201);
     // }
+
     public function store(Request $request)
     {
-        $validated  = $request->validate([
+        // Validate dữ liệu đầu vào
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
+            'contents' => 'nullable|string',
             'images' => 'nullable|array', // Chấp nhận mảng ảnh
             'images.*' => 'image|max:2048', // Mỗi ảnh phải là file hình ảnh
-            'category_id' => 'exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
-
         if ($request->category_id) {
             $category = Category::where('id', $request->category_id)->firstOrFail();
 
             $validated['category_slug'] = $category->slug;
         }
 
+
         $imagePaths = []; // Mảng chứa các đường dẫn ảnh đã upload
 
         // Kiểm tra và lưu các ảnh nếu có
-        if ($request->hasFile('images')) { // Kiểm tra nếu có file trong mảng `images`
+        if ($request->hasFile('images')) { // Kiểm tra nếu có file trong mảng images
             foreach ($request->file('images') as $file) {
                 // Tạo tên file duy nhất
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -145,7 +193,7 @@ class ProductController extends Controller
 
         // Thêm mảng ảnh vào dữ liệu và lưu dưới dạng JSON
         $validated['image'] = json_encode($imagePaths);
-        dump($validated);
+
         // Tạo sản phẩm mới
         $product = Product::create($validated);
 

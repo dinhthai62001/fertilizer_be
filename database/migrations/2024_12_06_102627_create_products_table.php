@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('price')->nullable()->default(null);
             $table->json('image')->nullable()->default(null);
             $table->string('category_slug')->nullable();
-            $table->text('contents')->nullable();
+            $table->longText('contents')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
             $table->timestamps();
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');

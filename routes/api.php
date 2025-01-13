@@ -23,7 +23,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
     Route::get('users', [AuthController::class, 'showalluser'])->middleware('auth:api');
 
     Route::group(['middleware' => 'auth:api', 'prefix' => 'product'], function () {
-        Route::get('/{slug}', [ProductController::class, 'index']);
+        Route::get('/{slug}', [ProductController::class, 'getProduct']);
         Route::post('/', [ProductController::class, 'store']);
         Route::get('/{id}', [ProductController::class, 'show']);
         Route::put('/{id}', [ProductController::class, 'update']);
@@ -38,6 +38,8 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
         Route::delete('/{id}', [CategoryController::class, 'destroy']);
     });
 });
-Route::get('/category/{slug}', [ProductController::class, 'index']);
+
+Route::get('/product', [ProductController::class, 'index']);
+Route::get('/category/{slug}', [ProductController::class, 'getProduct']);
 Route::get('/product/{slug}', [ProductController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
