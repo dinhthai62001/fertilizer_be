@@ -26,7 +26,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
         Route::get('/{slug}', [ProductController::class, 'getProduct']);
         Route::post('/', [ProductController::class, 'store']);
         Route::get('/{id}', [ProductController::class, 'show']);
-        Route::put('/{id}', [ProductController::class, 'update']);
+        Route::post('/update/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 
