@@ -81,6 +81,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+
         // Validate dữ liệu đầu vào
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -90,6 +91,11 @@ class ProductController extends Controller
             'images.*' => 'image|max:2048', // Mỗi ảnh phải là file hình ảnh
             'category_id' => 'nullable|exists:categories,id',
         ]);
+        if (Product::where('name', $request->name)->exists()) {
+            return response()->json([
+                'message' => 'Tên sản phẩm đã tồn tại. Vui lòng chọn tên khác.',
+            ], 422); // 422 Unprocessable Entity
+        }
         if ($request->category_id) {
             $category = Category::where('id', $request->category_id)->firstOrFail();
 
@@ -126,6 +132,10 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json(['message' => 'Product not found'], 404);
         }
+        if ($product->image) {
+            $product->image = json_decode($product->image); // Giải mã JSON nếu lưu ảnh dưới dạng mảng
+            $product->image = array_map(fn($img) => asset($img), $product->image); // Thêm URL đầy đủ
+        }
         return response()->json($product);
     }
 
@@ -141,6 +151,11 @@ class ProductController extends Controller
             'images.*' => 'image|max:2048', // Mỗi ảnh phải là file hình ảnh
             'category_id' => 'nullable|exists:categories,id',
         ]);
+        if (Product::where('name', $request->name)->exists()) {
+            return response()->json([
+                "message" => "Tên sản phẩm đã tồn tại. Vui lòng chọn tên khác."
+            ], 422);
+        }
 
         // Tìm sản phẩm cần cập nhật
         $product = Product::find($id);
