@@ -87,23 +87,21 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'contents' => 'nullable|string',
-            'images' => 'nullable|array', // Chấp nhận mảng ảnh
-            'images.*' => 'image|max:2048', // Mỗi ảnh phải là file hình ảnh
+            'images' => 'nullable|array',
+            'images.*' => 'image|max:2048',
             'category_id' => 'nullable|exists:categories,id',
         ]);
         if (Product::where('name', $request->name)->exists()) {
             return response()->json([
                 'message' => 'Tên sản phẩm đã tồn tại. Vui lòng chọn tên khác.',
-            ], 422); // 422 Unprocessable Entity
+            ], 422);
         }
         if ($request->category_id) {
             $category = Category::where('id', $request->category_id)->firstOrFail();
 
             $validated['category_slug'] = $category->slug;
         }
-
         $imagePaths = [];
-
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -113,16 +111,14 @@ class ProductController extends Controller
             }
         }
 
-        // Thêm mảng ảnh vào dữ liệu và lưu dưới dạng JSON
         $validated['image'] = json_encode($imagePaths);
 
-        // Tạo sản phẩm mới
         $product = Product::create($validated);
 
         return response()->json([
             'product' => $product,
             'message' => 'Sản phẩm được tạo thành công',
-            'images' => $request->name, // Trả về danh sách ảnh đã upload
+            'images' => $request->name,
         ], 201);
     }
 
