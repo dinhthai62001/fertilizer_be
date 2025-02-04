@@ -67,7 +67,8 @@ class CategoryController extends Controller
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
-
+        // Xóa tất cả các sản phẩm liên quan đến category này
+        $category->products()->delete();
         $category->delete();
         return response()->json(['message' => 'Category deleted successfully']);
     }

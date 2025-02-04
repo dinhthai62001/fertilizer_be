@@ -25,6 +25,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
     Route::group(['middleware' => 'auth:api', 'prefix' => 'product'], function () {
         Route::get('/{slug}', [ProductController::class, 'getProduct']);
         Route::post('/', [ProductController::class, 'store']);
+        Route::post('/upload', [ProductController::class, 'uploadImages']);
         Route::get('/{id}', [ProductController::class, 'show']);
         Route::post('/update/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
