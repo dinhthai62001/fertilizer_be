@@ -261,6 +261,7 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
+
         // Validate dữ liệu đầu vào
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
